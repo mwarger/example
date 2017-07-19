@@ -2,20 +2,36 @@ import React, { Component } from 'react'
 import logo from './logo.svg'
 import './App.css'
 
-const Name = props => {
-  const { person } = props // person = { name: 'Tom', id: 234 }
-  return (
-    <div>
-      {person.name}{' '}
-      <button onClick={() => props.onClickChange(person)}>Update Name</button>
-    </div>
-  )
+const immutableES6StyleStateUpdate = person => (state, props) => {
+  const { people } = state
+  const personToUpdate = people.filter(p => p.id === person.id)[0]
+  personToUpdate.name = personToUpdate.name === 'Jerry' ? 'Tom' : 'Jerry'
+
+  const newState = {
+    ...state, // spread all the old state, the people that come next will overwrite the old array of objects
+    people: [
+      ...people.slice(0, people.indexOf(person)), // take everything up to (but not including) the target person
+      personToUpdate, // shove in the update in place
+      ...people.slice(people.indexOf(person) + 1), // spread (...) everything after
+    ],
+  }
+
+  return newState
 }
-const People = props =>
+
+const Name = (
+  { person, toggleTomAndJerry } // person = { name: 'Tom', id: 234 }
+) =>
   <div>
-    {props.peopleList.map(p =>
-      <Name key={p.id} person={p} onClickChange={props.clickNameChange} />
-    )}
+    {person.name}{' '}
+    <button onClick={() => toggleTomAndJerry(person)}>Update Name</button>
+  </div>
+
+const People = (
+  { peopleList, ...rest } // you can use ...rest to just throw down other props (like functions) that you don't want to worry about
+) =>
+  <div>
+    {peopleList.map(p => <Name key={p.id} person={p} {...rest} />)}
   </div>
 
 class App extends Component {
@@ -29,43 +45,29 @@ class App extends Component {
           id: 234,
         },
         {
-          name: 'blah',
+          name: 'Drew',
           id: 123,
         },
       ],
     }
   }
 
-  changeTomToJerry = person => {
-    this.setState((state, props) => {
-      const { people } = state
-      const personToUpdate = people.filter(p => p.id === person.id)[0]
-      console.log('before update', personToUpdate)
-      personToUpdate.name = personToUpdate.name === 'Jerry' ? 'Tom' : 'Jerry'
-
-      return {
-        people: [
-          ...people.slice(0, people.indexOf(person)),
-          personToUpdate,
-          ...people.slice(people.indexOf(person) + 1),
-        ],
-      }
-    })
-  }
+  toggleTomAndJerry = person =>
+    this.setState(immutableES6StyleStateUpdate(person)) // this expects a function that takes (state, props)
 
   render() {
     return (
       <div className="App">
         <div className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h2>Welcome to React</h2>
+          <h2>Welcome to Drew's Example</h2>
         </div>
         <p className="App-intro">
           To get started, edit <code>src/App.js</code> and save to reload.
         </p>
         <People
           peopleList={this.state.people}
-          clickNameChange={this.changeTomToJerry}
+          toggleTomAndJerry={this.toggleTomAndJerry}
         />
       </div>
     )
